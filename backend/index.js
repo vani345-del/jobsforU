@@ -25,7 +25,7 @@ const IS_PROD = process.env.NODE_ENV === "production";
 // ===============================================
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://jobs4u-ai.vercel.app",   // production frontend
+  "https://jobsfor-u-4qa6.vercel.app",   // production frontend
 ];
 
 // ⭐ Allow ALL preview URLs like:
