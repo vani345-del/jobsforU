@@ -1,5 +1,4 @@
 // File: authRoutes.js (UPDATED)
-
 import express from "express";
 import { 
     signup, 
@@ -15,23 +14,18 @@ import {
 
 import isAuth from "../middleware/isAuth.js";
 import passport from 'passport'; 
-import multer from 'multer';
 import User from '../models/User.js'; // ⭐ NEW IMPORT for route handler
 
 
-const storage = multer.memoryStorage();
-const upload = multer({ 
-    storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 } 
-});
+
 
 const authRouter = express.Router();
 
-authRouter.put("/profile", 
+authRouter.put("/profile",
     isAuth,
-    upload.single('avatar'), 
     updateProfile
-)
+);
+
 
 // ⭐ NEW Route: Endpoint to check if the cookie/token is valid and return user data
 authRouter.get("/current-user", 

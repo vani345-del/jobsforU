@@ -9,8 +9,24 @@ import { Strategy as LinkedInStrategy } from 'passport-linkedin-oauth2';
 import cloudinary from '../config/cloudinary.js';
 
 
+// ⭐ FIX: Explicitly check for 'production' for maximum security
+const IS_SECURE_CONTEXT = process.env.NODE_ENV === "production"; 
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+
+
+const COOKIE_OPTIONS = {
+    httpOnly: true,
+    // CRITICAL: Must be true on Vercel/production (HTTPS)
+    secure: IS_SECURE_CONTEXT,
+    // CRITICAL: Must be 'none' when secure: true for cross-site calls (Vercel)
+    sameSite: IS_SECURE_CONTEXT ? "none" : "lax", 
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days expiry
+    path: "/", 
+};
+
 
 passport.use(new LinkedInStrategy({
+// ... (LinkedInStrategy logic remains unchanged)
     clientID: process.env.LINKEDIN_CLIENT_ID,
     clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
     callbackURL: process.env.LINKEDIN_CALLBACK_URL,
@@ -66,17 +82,13 @@ export const linkedInCallback = (req, res) => {
     if (req.user) {
         
         const token = genToken(req.user._id);
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        });
-
+        res.cookie("token", token, COOKIE_OPTIONS);
         
-        res.redirect("http://localhost:5173/profile");
+        // Use CLIENT_URL here in case you update the local redirect in env
+        res.redirect(`${CLIENT_URL}/profile`); 
     } else {
       
-        res.redirect("http://localhost:5173/login?error=LinkedInAuthFailed");
+        res.redirect(`${CLIENT_URL}/login?error=LinkedInAuthFailed`);
     }
 };
 
@@ -190,13 +202,7 @@ export const verifyOtp = async (req, res) => {
 
       
         let token = await genToken(user._id);
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-           sameSite:"Lax",
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
-
+        res.cookie("token", token, COOKIE_OPTIONS);
         return res.status(200).json(user);
 
     } catch (error) {
@@ -269,12 +275,7 @@ export const login = async (req, res) => {
         }
         
         let token=await genToken(user._id);
-        res.cookie("token",token,{
-            httpOnly:true,
-         secure:process.env.NODE_ENV === "production",
-            sameSite:"Lax",
-            maxAge:7*24*60*60*1000,
-        });
+        res.cookie("token", token, COOKIE_OPTIONS);
         return res.status(201).json(user);
     } catch (error) {
         console.error(error);
@@ -284,12 +285,7 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
-    res.clearCookie("token", {
-      httpOnly: true,
-       secure:process.env.NODE_ENV === "production",
-    sameSite:"Lax",
-      path: "/",       
-    });
+    res.clearCookie("token", COOKIE_OPTIONS);
     return res.status(200).json({ message: "Logout successful" });
   } catch (error) {
     return res.status(500).json({ message: `Logout error ${error}` });
@@ -316,12 +312,7 @@ export const googleAuth = async (req, res) => {
       }
       const token = await genToken(user._id);
 
-      res.cookie("token", token, {
-        httpOnly: true,
-       secure:process.env.NODE_ENV === "production",
-        sameSite: "Lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
+      res.cookie("token", token, COOKIE_OPTIONS);
 
       const { password: _, ...userData } = user.toObject();
       return res.status(200).json(userData);
@@ -342,12 +333,7 @@ export const googleAuth = async (req, res) => {
 
     const token = await genToken(newUser._id);
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure:process.env.NODE_ENV === "production",
-    sameSite: "Lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("token", token, COOKIE_OPTIONS);
 
     const { password: _, ...userData } = newUser.toObject();
     return res.status(201).json(userData);
@@ -380,7 +366,8 @@ export const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
     
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+    // Use CLIENT_URL here for robustness
+    const resetUrl = `${CLIENT_URL}/reset-password/${resetToken}`;
 
     await sendEmail({
       to: user.email,
@@ -469,42 +456,31 @@ export const resetPassword = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
     try {
-        
         const userId = req.userId; 
-        const { name } = req.body;
-        const file = req.file; 
+        const { name, avatar } = req.body; // avatar will be a base64 string
 
-       
         const user = await User.findById(userId);
 
         if (!user) {
             return res.status(404).json({ message: "User not found." });
         }
 
-       
-        let avatarUrl = user.avatar; 
-
-        if (file) {
-          
-            const result = await cloudinary.uploader.upload(
-                `data:${file.mimetype};base64,${file.buffer.toString('base64')}`,
-                { 
-                    folder: "mern-auth-avatars",
-                    transformation: [{ width: 150, height: 150, crop: "fill" }]
-                }
-            );
-            avatarUrl = result.secure_url;
+        // If avatar base64 string exists, upload to Cloudinary
+        if (avatar) {
+            const result = await cloudinary.uploader.upload(avatar, {
+                folder: "mern-auth-avatars",
+                transformation: [{ width: 150, height: 150, crop: "fill" }]
+            });
+            user.avatar = result.secure_url;
         }
 
-        
+        // Update name if provided
         if (name) {
             user.name = name;
         }
-        user.avatar = avatarUrl;
-        
+
         await user.save();
 
-        
         const { password: _, ...userData } = user.toObject();
         res.status(200).json(userData);
 
@@ -513,5 +489,3 @@ export const updateProfile = async (req, res) => {
         res.status(500).json({ message: `Profile update failed: ${error.message}` });
     }
 };
-
-
