@@ -30,7 +30,7 @@ export const loginUser = createAsyncThunk(
     try {
       const res =  await api.post("/api/auth/login",
   { email, password },
-  { withCredentials: true }
+
 );
      
     
@@ -50,7 +50,7 @@ export const loginUser = createAsyncThunk(
 // LOGOUT (backend clears cokie)
 export const logoutUser = createAsyncThunk("auth/logoutUser", async () => {
   try {
-    await api.get("/api/auth/logout", { withCredentials: true });
+    await api.get("/api/auth/logout");
      await signOut(auth);
     return null; 
     

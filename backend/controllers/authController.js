@@ -9,21 +9,29 @@ import { Strategy as LinkedInStrategy } from 'passport-linkedin-oauth2';
 import cloudinary from '../config/cloudinary.js';
 
 
-// ⭐ FIX: Explicitly check for 'production' for maximum security
-const IS_SECURE_CONTEXT = process.env.NODE_ENV === "production"; 
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+// 🔥 FIX: Always use secure settings on Vercel
+const IS_VERCEL = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+const IS_SECURE_CONTEXT = process.env.NODE_ENV === "production" || IS_VERCEL;
 
+// Add debug log
+console.log("🔧 Environment Check:", {
+    NODE_ENV: process.env.NODE_ENV,
+    VERCEL: process.env.VERCEL,
+    VERCEL_ENV: process.env.VERCEL_ENV,
+    IS_SECURE_CONTEXT,
+});
+
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
 const COOKIE_OPTIONS = {
     httpOnly: true,
-    // CRITICAL: Must be true on Vercel/production (HTTPS)
-    secure: IS_SECURE_CONTEXT,
-    // CRITICAL: Must be 'none' when secure: true for cross-site calls (Vercel)
-    sameSite: IS_SECURE_CONTEXT ? "none" : "lax", 
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days expiry
-    path: "/", 
+    secure: true,  // Force true
+    sameSite: "none",  // Force none
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: "/",
 };
 
+console.log("🍪 Cookie Options:", COOKIE_OPTIONS); // Debug log
 
 passport.use(new LinkedInStrategy({
 // ... (LinkedInStrategy logic remains unchanged)

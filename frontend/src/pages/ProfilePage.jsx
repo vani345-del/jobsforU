@@ -53,7 +53,7 @@ const ProfilePage = () => {
             };
 
             const res = await api.put("/api/auth/profile", payload, {
-                withCredentials: true,
+
             });
 
             dispatch(setUserData(res.data));
