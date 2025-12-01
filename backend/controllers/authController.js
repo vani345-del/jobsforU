@@ -13,25 +13,39 @@ import cloudinary from '../config/cloudinary.js';
 const IS_VERCEL = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
 const IS_SECURE_CONTEXT = process.env.NODE_ENV === "production" || IS_VERCEL;
 
+// ⭐ NEW: Base domain for the cookie. This should be set as an ENV var in Vercel.
+const VERCEL_BACKEND_DOMAIN = process.env.VERCEL_BACKEND_DOMAIN; 
+
+// ⭐ UPDATED: Use FRONTEND_URL environment variable for client redirects
+const CLIENT_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+
 // Add debug log
 console.log("🔧 Environment Check:", {
     NODE_ENV: process.env.NODE_ENV,
     VERCEL: process.env.VERCEL,
     VERCEL_ENV: process.env.VERCEL_ENV,
     IS_SECURE_CONTEXT,
+    VERCEL_BACKEND_DOMAIN, // Log the domain
+    CLIENT_URL, // Log the client URL
 });
 
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
+// ⭐ CRITICAL FIX: Conditional Cookie Options for Vercel
 const COOKIE_OPTIONS = {
     httpOnly: true,
-    secure: true,  // Force true
-    sameSite: "none",  // Force none
+    // Use conditional secure and sameSite based on context
+    secure: IS_SECURE_CONTEXT, 
+    sameSite: IS_SECURE_CONTEXT ? "none" : "lax", // 'none' is required for cross-site with 'secure: true'
     maxAge: 7 * 24 * 60 * 60 * 1000,
     path: "/",
+    
+    // ⭐ CRITICAL FIX: Conditionally set the domain for Vercel deployments
+    ...(IS_VERCEL && VERCEL_BACKEND_DOMAIN && { domain: VERCEL_BACKEND_DOMAIN }), 
 };
 
 console.log("🍪 Cookie Options:", COOKIE_OPTIONS); // Debug log
+
 
 passport.use(new LinkedInStrategy({
 // ... (LinkedInStrategy logic remains unchanged)
@@ -82,9 +96,6 @@ passport.use(new LinkedInStrategy({
 }));
 
 
-
-
-
 export const linkedInCallback = (req, res) => {
   
     if (req.user) {
@@ -92,22 +103,13 @@ export const linkedInCallback = (req, res) => {
         const token = genToken(req.user._id);
         res.cookie("token", token, COOKIE_OPTIONS);
         
-        // Use CLIENT_URL here in case you update the local redirect in env
+        // ⭐ UPDATED: Use CLIENT_URL (now linked to FRONTEND_URL)
         res.redirect(`${CLIENT_URL}/profile`); 
     } else {
       
         res.redirect(`${CLIENT_URL}/login?error=LinkedInAuthFailed`);
     }
 };
-
-
-
-
-
-
-
-
-
 
 
 export const signup = async(req, res) => {
@@ -301,8 +303,6 @@ export const logout = async (req, res) => {
 };
 
 
-
-
 export const googleAuth = async (req, res) => {
   try {
     const { name, email } = req.body;
@@ -353,7 +353,6 @@ export const googleAuth = async (req, res) => {
 };
 
 
-
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -374,7 +373,7 @@ export const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
     
-    // Use CLIENT_URL here for robustness
+    // ⭐ UPDATED: Use CLIENT_URL (now linked to FRONTEND_URL)
     const resetUrl = `${CLIENT_URL}/reset-password/${resetToken}`;
 
     await sendEmail({
@@ -400,7 +399,6 @@ export const forgotPassword = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 
 export const resetPassword = async (req, res) => {
@@ -470,6 +468,7 @@ export const updateProfile = async (req, res) => {
         const user = await User.findById(userId);
 
         if (!user) {
+            // This is unlikely if isAuth passed, but good safeguard
             return res.status(404).json({ message: "User not found." });
         }
 

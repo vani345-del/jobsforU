@@ -36,7 +36,7 @@ const ProfilePage = () => {
         }
     };
 
-    const handleSubmit = async (e) => {
+          const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
@@ -53,7 +53,8 @@ const ProfilePage = () => {
             };
 
             const res = await api.put("/api/auth/profile", payload, {
-
+                // ⭐ CRITICAL FIX: Ensure credentials (cookies) are sent for this cross-origin request
+                withCredentials: true, 
             });
 
             dispatch(setUserData(res.data));
@@ -61,17 +62,8 @@ const ProfilePage = () => {
             toast.success("Profile updated successfully!");
 
         } catch (error) {
-            console.error("Profile update failed:", error);
-            const errorMessage =
-                error.response?.data?.message || 'Failed to update profile.';
+            console.error(error);
 
-            const debugInfo = error.response?.data?.debug;
-            if (debugInfo) {
-                console.error("Backend Debug Info:", debugInfo);
-                toast.error(`${errorMessage}. Debug: ${debugInfo}`);
-            } else {
-                toast.error(errorMessage);
-            }
         } finally {
             setLoading(false);
         }
