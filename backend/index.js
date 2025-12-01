@@ -11,6 +11,12 @@ dotenv.config();
 connectDB();
 
 const app = express();
+
+// ===============================================
+// 🔥 CRITICAL: Trust Vercel's proxy for cookies
+// ===============================================
+app.set('trust proxy', 1);
+
 const port = process.env.PORT || 5000;
 
 // Detect Production (Vercel)
