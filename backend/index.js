@@ -8,7 +8,7 @@ import passport from "passport";
 import authRouter from "./routes/authRoutes.js";
 
 dotenv.config();
-connectDB();
+
 
 const app = express();
 
@@ -16,6 +16,7 @@ const app = express();
 // 🔥 CRITICAL: Trust Vercel's proxy for cookies
 // ===============================================
 app.set('trust proxy', 1);
+app.use(cookieParser());
 
 const port = process.env.PORT || 5000;
 
@@ -53,13 +54,13 @@ app.use(
 // ===============================================
 // ✅ STEP 2: Body Parsers (BEFORE cookie-parser!)
 // ===============================================
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // ===============================================
 // ✅ STEP 3: Cookie Parser (BEFORE session!)
 // ===============================================
-app.use(cookieParser());
 
 // ===============================================
 // ✅ STEP 4: Session Config
@@ -98,5 +99,6 @@ app.get("/", (req, res) => {
 });
 
 app.listen(port, () =>
-  console.log(`Server running on port ${port}`)
+  console.log(`Server running on port ${port}`);
+connectDB();
 );
