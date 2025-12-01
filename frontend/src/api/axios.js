@@ -1,11 +1,13 @@
+
+
 import axios from 'axios';
-const API_URL = import.meta.env.VITE_BASE_URL; 
 
 const api = axios.create({
-    baseURL: API_URL,
-    
-    withCredentials: true, 
+  baseURL: import.meta.env.VITE_API_URL || 'https://jobsfor-u.vercel.app',
+  withCredentials: true, // ✅ CRITICAL: Set globally
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
-
 
 export default api;
