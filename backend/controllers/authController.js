@@ -497,13 +497,20 @@ export const updateProfile = async (req, res) => {
     }
 };
 
-// controllers/authController.js
-export const currentUser = (req, res) => {
+
+
+export const currentUser = async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+    if (!req.userId) {
+      return res.status(200).json(null); // ✅ return null instead of 401
     }
-    res.status(200).json(req.user);
+
+    const user = await User.findById(req.userId).select("-password");
+    if (!user) {
+      return res.status(200).json(null);
+    }
+
+    res.status(200).json(user);
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }

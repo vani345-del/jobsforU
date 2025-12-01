@@ -16,12 +16,11 @@ const port = process.env.PORT || 8000;
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// ❌ Completely removed multer — it was breaking multipart requests
+
 
 const allowedOrigins = [
-  "http://localhost:5173",
-  "https://jobsfor-u-4qa6.vercel.app", // frontend
-  "https://jobsfor-u.vercel.app"       // backend (self)
+     "http://localhost:5173",        // local frontend
+    "https://jobsfor-u-4qa6.vercel.app" 
 ];
 
 app.use((req, res, next) => {

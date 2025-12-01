@@ -26,37 +26,37 @@ const App = () => {
   const { user } = useSelector((state) => state.auth);
   const [isAuthCheckComplete, setIsAuthCheckComplete] = useState(false);
 
-  // ⭐ FIX: This useEffect hook re-hydrates the Redux state from the persistent cookie
-  useEffect(() => {
-    // Only run if the user is not in the Redux state (i.e., on page refresh)
-    if (!user) {
-      const checkAuth = async () => {
-        try {
-          // This calls the backend to validate the cookie and return user data
-          const res = await api.get('/api/auth/current-user', { 
-            withCredentials: true 
-          });
+ useEffect(() => {
+  if (!user) {
+    const checkAuth = async () => {
+      try {
+        const res = await api.get('/api/auth/current-user', { 
+          withCredentials: true 
+        });
 
-          if (res.status === 200) {
-            dispatch(setUserData(res.data));
-            console.log("Auth Check: User state re-hydrated from cookie.");
-          }
-        } catch (error) {
-          // A 401 error is expected here if the user is genuinely logged out
-          // or the cookie is expired/missing. We just keep Redux state as null.
-          console.log('Auth Check: No valid cookie found or failed to fetch user.');
-        } finally {
-          // Crucial: Set this state to true so the application can render
-          // the appropriate routes (either ProtectedRoute or Login/Signup).
-          setIsAuthCheckComplete(true);
+        if (res.status === 200) {
+          dispatch(setUserData(res.data));
+          console.log("Auth Check: User state re-hydrated from cookie.");
         }
-      };
-      checkAuth();
-    } else {
-      // If user is already in state (e.g., after login/signup), skip fetch
-      setIsAuthCheckComplete(true);
-    }
-  }, [user, dispatch]); 
+      } catch (error) {
+  if (error.response?.status === 401) {
+    // Expected: user not logged in
+    console.log("Auth Check: User not logged in.");
+    // Optionally: redirect to login
+    // navigate("/login");
+  } else {
+    console.error("Auth Check failed:", error);
+    toast.error("Something went wrong while checking auth.");
+  }
+} finally {
+  setIsAuthCheckComplete(true);
+}
+    };
+    checkAuth();
+  } else {
+    setIsAuthCheckComplete(true);
+  }
+}, [user, dispatch]);
 
   // Display a loader while checking auth status to prevent flicker and unwanted redirects
   if (!isAuthCheckComplete) {
