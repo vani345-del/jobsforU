@@ -20,12 +20,12 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 const allowedOrigins = [
   "http://localhost:5173",
   "https://jobs4u-ai.vercel.app",
+  "https://jobs4u-ai-9vrl.vercel.app",
   "https://jobsfor-u-4qa6.vercel.app",  // ⭐ ADD THIS
 ];
 
 
-const vercelPreviewRegex = /^https:\/\/[^/]+\.vercel\.app$/;
-
+const vercelPreviewRegex = /^https:\/\/[^/]+\.vercel\.app$/; 
 
 // CORS with dynamic origin
 app.use(
