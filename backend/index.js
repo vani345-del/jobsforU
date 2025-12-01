@@ -23,7 +23,7 @@ const allowedOrigins = [
   "https://jobs4u-ai-9vrl.vercel.app"
 ];
 
-const vercelPreviewRegex = /^https:\/\/jobs4u-ai-[a-z0-9-]+\.vercel\.app$/;
+const vercelPreviewRegex = /^https:\/\/[^/]+\.vercel\.app$/; 
 
 // CORS with dynamic origin
 app.use(
