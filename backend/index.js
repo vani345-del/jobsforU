@@ -12,43 +12,32 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 8000;
 
-// Body parsers with limit (for base64 avatars etc.)
+// Parse JSON (for base64 avatar)
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-import multer from "multer";
-const upload = multer();
-app.use(upload.none());
+// ❌ Completely removed multer — it was breaking multipart requests
 
-// 🎯 Allowed origins
+// Allowed frontend domains
 const allowedOrigins = [
   "http://localhost:5173",
   "https://jobs4u-ai.vercel.app",
   "https://jobs4u-ai-9vrl.vercel.app",
-  "https://jobsfor-u-4qa6.vercel.app", 
-   "https://jobsfor-o5up5tfvd-vanis-projects-3c27f728.vercel.app"  // ⭐ ADD THIS
+  "https://jobsfor-u-4qa6.vercel.app",
+  "https://jobsfor-o5up5tfvd-vanis-projects-3c27f728.vercel.app"
 ];
 
+const vercelPreviewRegex = /^https:\/\/[^/]+\.vercel\.app$/;
 
-
-const vercelPreviewRegex = /^https:\/\/[^/]+\.vercel\.app$/; 
-
-
-
-// CORS with dynamic origin
+// CORS
 app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
+      if (allowedOrigins.includes(origin)) return callback(null, true);
 
-      if (vercelPreviewRegex.test(origin)) {
-        return callback(null, true);
-
-      }
+      if (vercelPreviewRegex.test(origin)) return callback(null, true);
 
       console.log("❌ CORS BLOCKED ORIGIN:", origin);
       return callback(new Error("Not allowed by CORS"));
@@ -64,7 +53,7 @@ app.use(cookieParser());
 // Passport
 app.use(passport.initialize());
 
-// Connect to DB once
+// Connect to DB
 let isConnected = false;
 app.use(async (req, res, next) => {
   if (!isConnected) {
@@ -81,12 +70,11 @@ app.get("/", (req, res) => {
   res.send("Backend running successfully 🚀");
 });
 
-// CRITICAL: For local development only
+// Local mode
 if (process.env.NODE_ENV !== "production") {
   app.listen(port, () => {
     console.log(`Server running on port ${port}`);
   });
 }
 
-// CRITICAL: Export for Vercel serverless
 export default app;

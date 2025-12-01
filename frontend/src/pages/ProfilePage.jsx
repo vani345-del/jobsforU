@@ -27,16 +27,15 @@ const ProfilePage = () => {
         });
     };
 
-    // File selection preview
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (file) {
             setAvatarFile(file);
-            setAvatarPreview(URL.createObjectURL(file)); // instant UI preview
+            setAvatarPreview(URL.createObjectURL(file));
         }
     };
 
-          const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
@@ -49,12 +48,14 @@ const ProfilePage = () => {
 
             const payload = {
                 name,
-                avatar: avatarBase64, // can be null
+                avatar: avatarBase64,
             };
 
-            const res = await api.put("/api/auth/profile", payload, {
-                // ⭐ CRITICAL FIX: Ensure credentials (cookies) are sent for this cross-origin request
-                withCredentials: true, 
+            const res = await api.put("/api/auth/profile", JSON.stringify(payload), {
+                withCredentials: true,
+                headers: {
+                    "Content-Type": "application/json"
+                }
             });
 
             dispatch(setUserData(res.data));
@@ -63,7 +64,7 @@ const ProfilePage = () => {
 
         } catch (error) {
             console.error(error);
-
+            toast.error("Profile update failed");
         } finally {
             setLoading(false);
         }
@@ -75,9 +76,8 @@ const ProfilePage = () => {
                 User Profile Dashboard
             </h2>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6" encType="application/json">
                 
-                {/* Avatar Section */}
                 <div className="flex flex-col items-center space-y-4">
                     <img
                         src={avatarPreview || 'https://placehold.co/150'}
@@ -88,65 +88,53 @@ const ProfilePage = () => {
                     <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-indigo-700 font-semibold py-2 px-4 rounded-lg transition duration-200">
                         Change Photo
                         <input 
-                            type="file" 
+                            type="file"
                             accept="image/*"
                             onChange={handleFileChange}
                             className="hidden"
                             disabled={loading}
+                            form=""     // ⭐ prevents multipart form submission
                         />
                     </label>
                 </div>
 
-                {/* User ID */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                        User ID (MongoDB _id)
-                    </label>
-                    <div className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-sm break-all">
+                    <label className="block text-sm font-medium text-gray-700">User ID</label>
+                    <div className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm break-all">
                         {user._id}
                     </div>
-                    <p className="mt-1 text-xs text-gray-500">
-                        This is your unique database identifier.
-                    </p>
                 </div>
 
-                {/* Name Input */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Name</label>
                     <input
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
                         disabled={loading}
                     />
                 </div>
 
-                {/* Email (Read-Only) */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                    <label className="block text-sm font-medium text-gray-700">Email</label>
                     <input
                         type="email"
                         value={user.email}
                         readOnly
                         disabled
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 cursor-not-allowed"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
                     />
                 </div>
 
-                {/* Submit Button */}
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 cursor-pointer"
+                    className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
                 >
                     {loading ? 'Updating...' : 'Save Changes'}
                 </button>
             </form>
-
-            <p className="text-sm text-gray-500 pt-4 border-t mt-6 text-center">
-                **Note:** This page is protected and contains profile editing features.
-            </p>
         </div>
     );
 };
