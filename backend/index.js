@@ -16,6 +16,10 @@ const port = process.env.PORT || 8000;
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
+import multer from "multer";
+const upload = multer();
+app.use(upload.none());
+
 // 🎯 Allowed origins
 const allowedOrigins = [
   "http://localhost:5173",
