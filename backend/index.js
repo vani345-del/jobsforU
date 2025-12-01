@@ -18,34 +18,38 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // ❌ Completely removed multer — it was breaking multipart requests
 
-// Allowed frontend domains
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://jobs4u-ai.vercel.app",
-  "https://jobs4u-ai-9vrl.vercel.app",
-  "https://jobsfor-u-4qa6.vercel.app",
-  "https://jobsfor-o5up5tfvd-vanis-projects-3c27f728.vercel.app"
+  "https://jobsfor-u-4qa6.vercel.app", // frontend
+  "https://jobsfor-u.vercel.app"       // backend (self)
 ];
 
-const vercelPreviewRegex = /^https:\/\/[^/]+\.vercel\.app$/;
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
 
-// CORS
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
 
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,DELETE,OPTIONS"
+  );
 
-      if (vercelPreviewRegex.test(origin)) return callback(null, true);
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type,Authorization"
+  );
 
-      console.log("❌ CORS BLOCKED ORIGIN:", origin);
-      return callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  })
-);
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+
+  // Important: respond to OPTIONS immediately
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  next();
+});
 
 // Cookies
 app.use(cookieParser());

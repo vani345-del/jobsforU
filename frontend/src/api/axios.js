@@ -17,4 +17,4 @@ api.interceptors.response.use(
   (error) => Promise.reject(error)
 );
 
-export default api;  // 🔥 THIS WAS MISSING
+export default api;  
