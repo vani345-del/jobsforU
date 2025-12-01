@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { signOut } from "firebase/auth";
-import api from "../../api/axios.js";
+import api from "../../api/axios";
 import { auth } from "../../utils/firebase";
 
 const getErrorMessage = (error) =>
