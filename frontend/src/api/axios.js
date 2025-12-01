@@ -1,13 +1,10 @@
-
-
-import axios from 'axios';
-
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'https://jobsfor-u.vercel.app',
-  withCredentials: true, // ✅ CRITICAL: Set globally
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json'
   },
+  maxContentLength: Infinity,
+  maxBodyLength: Infinity
 });
-
-export default api;
