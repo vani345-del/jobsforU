@@ -8,7 +8,7 @@ import passport from "passport";
 import authRouter from "./routes/authRoutes.js";
 
 dotenv.config();
-
+connectDB()
 const app = express();
 const port = process.env.PORT || 8000;
 
