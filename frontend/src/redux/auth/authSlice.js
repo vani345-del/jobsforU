@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { signOut } from "firebase/auth";
-import api from "../../api/axios";
+import api from "../../api/axios.js";
 import { auth } from "../../utils/firebase";
+
 const getErrorMessage = (error) =>
   error.response?.data?.message ||
   "Request failed. Check server/network connection.";
@@ -28,34 +29,25 @@ export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async ({ email, password, navigate }, { rejectWithValue }) => {
     try {
-      const res =  await api.post("/api/auth/login",
-  { email, password },
+      const res = await api.post("/api/auth/login", { email, password });
 
-);
-     
-    
-      if (res.status === 202) {
-        
-         return res.data; 
-      }
+      if (res.status === 202) return res.data;
 
       navigate("/profile");
       return res.data;
     } catch (error) {
-       
       return rejectWithValue(getErrorMessage(error));
     }
   }
 );
-// LOGOUT (backend clears cokie)
+
+// LOGOUT
 export const logoutUser = createAsyncThunk("auth/logoutUser", async () => {
   try {
     await api.get("/api/auth/logout");
-     await signOut(auth);
-    return null; 
-    
-  } catch (error) {
-    console.error("Logout failed", error);
+    await signOut(auth);
+    return null;
+  } catch {
     return null;
   }
 });
@@ -95,25 +87,27 @@ const authSlice = createSlice({
       })
 
       // LOGIN
-     .addCase(loginUser.pending, (state) => {
+      .addCase(loginUser.pending, (state) => {
         state.loading = true;
-        state.error = null; // Clear previous errors
+        state.error = null;
       })
-     .addCase(loginUser.fulfilled, (state, action) => {
-    state.loading = false;
-    
-    
-    const unverifiedMessage = "Account not verified. A new verification code has been sent";
-    
-    if (action.payload.message && action.payload.message.includes(unverifiedMessage)) {
-      
-        state.error = action.payload.message; 
-        state.user = null;
-    } else {
-         state.user = action.payload;
-        state.error = null; 
-    }
-})
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.loading = false;
+
+        const unverifiedMessage =
+          "Account not verified. A new verification code has been sent";
+
+        if (
+          action.payload.message &&
+          action.payload.message.includes(unverifiedMessage)
+        ) {
+          state.error = action.payload.message;
+          state.user = null;
+        } else {
+          state.user = action.payload;
+          state.error = null;
+        }
+      })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
@@ -124,9 +118,6 @@ const authSlice = createSlice({
         state.user = null;
         state.loading = false;
         state.error = null;
-      })
-      .addCase(logoutUser.pending, (state) => {
-        state.loading = true;
       });
   },
 });
