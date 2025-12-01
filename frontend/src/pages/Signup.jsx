@@ -1,4 +1,4 @@
-// File: pages/SignupPage.jsx
+
 
 import React, { useState, useEffect } from 'react';
 import { FaGoogle, FaLinkedin, FaEye, FaEyeSlash } from 'react-icons/fa'; // Import icons
