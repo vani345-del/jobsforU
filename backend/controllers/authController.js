@@ -496,3 +496,15 @@ export const updateProfile = async (req, res) => {
         res.status(500).json({ message: `Profile update failed: ${error.message}` });
     }
 };
+
+// controllers/authController.js
+export const currentUser = (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    res.status(200).json(req.user);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};

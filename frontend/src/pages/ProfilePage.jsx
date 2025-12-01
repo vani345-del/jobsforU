@@ -65,6 +65,8 @@ const ProfilePage = () => {
       <h2 className="text-3xl font-bold mb-6 text-center">User Profile</h2>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        
+        {/* Avatar Section */}
         <div className="flex flex-col items-center gap-4">
           <img
             src={avatarPreview || "https://placehold.co/150"}
@@ -78,12 +80,12 @@ const ProfilePage = () => {
               accept="image/*"
               className="hidden"
               onChange={handleFileChange}
-              form=""   // prevent multipart
               disabled={loading}
             />
           </label>
         </div>
 
+        {/* Name Input */}
         <div>
           <label>Name</label>
           <input
@@ -91,6 +93,26 @@ const ProfilePage = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={loading}
+          />
+        </div>
+
+        {/* Email (Read Only) */}
+        <div>
+          <label>Email</label>
+          <input
+            className="border rounded w-full p-2 bg-gray-100"
+            value={user?.email || ""}
+            disabled
+          />
+        </div>
+
+        {/* MongoDB ID (Read Only) */}
+        <div>
+          <label>MongoDB ID</label>
+          <input
+            className="border rounded w-full p-2 bg-gray-100 text-gray-600"
+            value={user?._id || ""}
+            disabled
           />
         </div>
 
