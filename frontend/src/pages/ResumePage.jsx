@@ -284,13 +284,51 @@ const ResumePage = () => {
                 throw new Error('Resume preview not found');
             }
 
+            // Clone the element to avoid modifying the actual DOM
+            const clone = resumeElement.cloneNode(true);
+            clone.style.position = 'absolute';
+            clone.style.left = '-9999px';
+            document.body.appendChild(clone);
+
+            // Function to convert oklch to rgb
+            const convertOklchToRgb = (element) => {
+                const computedStyle = window.getComputedStyle(element);
+
+                // Convert all color properties
+                ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'].forEach(prop => {
+                    const value = computedStyle[prop];
+                    if (value && value.includes('oklch')) {
+                        // For now, replace with computed RGB value
+                        element.style[prop] = value;
+                    }
+                });
+
+                // Process children
+                Array.from(element.children).forEach(child => {
+                    convertOklchToRgb(child);
+                });
+            };
+
+            // Convert all oklch colors to rgb
+            convertOklchToRgb(clone);
+
             // Convert HTML to canvas
-            const canvas = await html2canvas(resumeElement, {
+            const canvas = await html2canvas(clone, {
                 scale: 2, // Higher quality
                 useCORS: true,
                 logging: false,
-                backgroundColor: '#ffffff'
+                backgroundColor: '#ffffff',
+                onclone: (clonedDoc) => {
+                    // Additional processing on the cloned document if needed
+                    const clonedElement = clonedDoc.querySelector('[data-resume-preview]');
+                    if (clonedElement) {
+                        clonedElement.style.transform = 'none';
+                    }
+                }
             });
+
+            // Remove the clone
+            document.body.removeChild(clone);
 
             // Calculate PDF dimensions (A4: 210mm x 297mm)
             const imgWidth = 210;
@@ -322,7 +360,7 @@ const ResumePage = () => {
             toast.success("PDF downloaded successfully!");
         } catch (error) {
             console.error("Download failed:", error);
-            toast.error("Failed to download PDF. Please try again.");
+            toast.error(`Failed to download PDF: ${error.message || 'Please try again.'}`);
         } finally {
             setIsDownloading(false);
         }
