@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import api from '../api/axios'; 
+import axios from 'axios';
 import toast from 'react-hot-toast';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-
 
 const ForgotPasswordForm = () => {
   const [email, setEmail] = useState('');
@@ -16,10 +15,7 @@ const ForgotPasswordForm = () => {
     setMessage('');
 
     try {
-     
-      const res = await api.post('/api/auth/forgot-password', { email });
-
-      
+      const res = await axios.post('/api/auth/forgot-password', { email });
       setMessage(res.data.message);
       toast.success(res.data.message);
       setEmail('');
@@ -76,20 +72,14 @@ const ForgotPasswordForm = () => {
   );
 };
 
-
-
-// ... (ForgotPasswordForm remains unchanged, adding cursor-pointer to button) ...
-
 const ResetPasswordForm = ({ token }) => {
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  // **NEW**: State for password visibility
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Function to toggle password visibility
   const togglePasswordVisibility = (field) => {
     if (field === 'password') {
       setShowPassword(!showPassword);
@@ -97,7 +87,6 @@ const ResetPasswordForm = ({ token }) => {
       setShowConfirmPassword(!showConfirmPassword);
     }
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -115,8 +104,7 @@ const ResetPasswordForm = ({ token }) => {
     setLoading(true);
 
     try {
-      const res = await api.post(`/api/auth/reset-password/${token}`, { password });
-
+      const res = await axios.post(`/api/auth/reset-password/${token}`, { password });
       toast.success(res.data.message);
       navigate("/login");
     } catch (error) {
@@ -137,54 +125,52 @@ const ResetPasswordForm = ({ token }) => {
         Enter your new password below.
       </p>
 
-      <form 
-        onSubmit={handleSubmit} 
+      <form
+        onSubmit={handleSubmit}
         className="space-y-4"
         autoComplete="off"
         onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
       >
-        {/* NEW: Password Field with Eye Icon */}
         <div>
           <label className="block text-sm font-medium text-gray-700">New Password</label>
           <div className="relative">
             <input
-                type={showPassword ? "text" : "password"}
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 pr-10"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 pr-10"
             />
             <button
-                type="button"
-                onClick={() => togglePasswordVisibility('password')}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 focus:outline-none text-gray-500 hover:text-gray-700 cursor-pointer"
-                aria-label={showPassword ? "Hide new password" : "Show new password"}
+              type="button"
+              onClick={() => togglePasswordVisibility('password')}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 focus:outline-none text-gray-500 hover:text-gray-700 cursor-pointer"
+              aria-label={showPassword ? "Hide new password" : "Show new password"}
             >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
             </button>
           </div>
         </div>
 
-        {/* NEW: Confirm Password Field with Eye Icon */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Confirm New Password</label>
           <div className="relative">
             <input
-                type={showConfirmPassword ? "text" : "password"}
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 pr-10"
+              type={showConfirmPassword ? "text" : "password"}
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 pr-10"
             />
-             <button
-                type="button"
-                onClick={() => togglePasswordVisibility('confirmPassword')}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 focus:outline-none text-gray-500 hover:text-gray-700 cursor-pointer"
-                aria-label={showConfirmPassword ? "Hide confirm new password" : "Show confirm new password"}
+            <button
+              type="button"
+              onClick={() => togglePasswordVisibility('confirmPassword')}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 focus:outline-none text-gray-500 hover:text-gray-700 cursor-pointer"
+              aria-label={showConfirmPassword ? "Hide confirm new password" : "Show confirm new password"}
             >
-                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+              {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
             </button>
           </div>
         </div>
@@ -192,7 +178,7 @@ const ResetPasswordForm = ({ token }) => {
         <button
           type="submit"
           disabled={loading || password !== confirmPassword || password.length < 8}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 cursor-pointer" // **ADDED: cursor-pointer**
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 cursor-pointer"
         >
           {loading ? 'Updating...' : 'Set New Password'}
         </button>
@@ -201,19 +187,13 @@ const ResetPasswordForm = ({ token }) => {
   );
 };
 
-
-
-
 const ForgetPassword = () => {
-  
-  const { token } = useParams(); 
+  const { token } = useParams();
 
- 
   if (token) {
     return <ResetPasswordForm token={token} />;
   }
-  
-  
+
   return <ForgotPasswordForm />;
 };
 

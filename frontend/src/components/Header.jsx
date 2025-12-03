@@ -1,28 +1,25 @@
-
-
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { logoutUser } from '../redux/auth/authSlice';
-
 import { useNavigate } from "react-router-dom";
 
 const Header = () => {
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     dispatch(logoutUser());
-     navigate("/login");
+    navigate("/login");
   };
 
   return (
     <header className="bg-white shadow-md">
       <div className="container mx-auto p-4 flex justify-between items-center">
-      
+
         <Link to="/" className="text-2xl font-bold text-indigo-600">
-        DreamTrue
+          Jobs4uAI
         </Link>
 
         <nav className="flex items-center space-x-4">

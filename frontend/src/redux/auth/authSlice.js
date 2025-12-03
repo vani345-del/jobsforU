@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { signOut } from "firebase/auth";
-import api from "../../api/axios";
+import axios from "axios";
 import { auth } from "../../utils/firebase";
 
 const getErrorMessage = (error) =>
@@ -11,7 +11,7 @@ export const registerUser = createAsyncThunk(
   "auth/registerUser",
   async ({ name, email, password, navigate }, { rejectWithValue }) => {
     try {
-      const res = await api.post("/api/auth/signup", {
+      const res = await axios.post("/api/auth/signup", {
         name,
         email,
         password,
@@ -29,7 +29,7 @@ export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async ({ email, password, navigate }, { rejectWithValue }) => {
     try {
-      const res = await api.post("/api/auth/login", { email, password });
+      const res = await axios.post("/api/auth/login", { email, password });
 
       if (res.status === 202) return res.data;
 
@@ -44,7 +44,7 @@ export const loginUser = createAsyncThunk(
 // LOGOUT
 export const logoutUser = createAsyncThunk("auth/logoutUser", async () => {
   try {
-    await api.get("/api/auth/logout");
+    await axios.get("/api/auth/logout");
     await signOut(auth);
     return null;
   } catch {

@@ -6,6 +6,8 @@ import cors from "cors";
 import passport from "passport";
 
 import authRouter from "./routes/authRoutes.js";
+import resumeRouter from "./routes/resumeRoutes.js";
+
 
 dotenv.config();
 connectDB()
@@ -19,36 +21,31 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 
 const allowedOrigins = [
-     "http://localhost:5173",        // local frontend
-    "https://jobsfor-u-4qa6.vercel.app" 
-];
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://jobsfor-u-4qa6.vercel.app",
+  process.env.FRONTEND_URL
+].filter(Boolean);
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
+app.options('*', cors()); // Enable pre-flight for all routes
 
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
 
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET,POST,PUT,DELETE,OPTIONS"
-  );
-
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type,Authorization"
-  );
-
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-
-  // Important: respond to OPTIONS immediately
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
-  next();
-});
+    // Check if origin is in allowedOrigins or is a Vercel preview deployment
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      console.log("Blocked by CORS:", origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+}));
 
 // Cookies
 app.use(cookieParser());
@@ -68,6 +65,8 @@ app.use(async (req, res, next) => {
 
 // Routes
 app.use("/api/auth", authRouter);
+app.use("/api/resume", resumeRouter);
+
 
 app.get("/", (req, res) => {
   res.send("Backend running successfully 🚀");
