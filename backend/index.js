@@ -89,6 +89,17 @@ app.get("/", (req, res) => {
   res.send("Backend running successfully 🚀");
 });
 
+// Catch-all for debugging 404s
+app.use("*", (req, res) => {
+  console.log(`[404] Handled by catch-all: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({
+    error: "Route not found (caught by express)",
+    method: req.method,
+    url: req.originalUrl,
+    path: req.path
+  });
+});
+
 // Local mode
 if (process.env.NODE_ENV !== "production") {
   app.listen(port, () => {
