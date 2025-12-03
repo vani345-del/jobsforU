@@ -1,4 +1,3 @@
-```javascript
 import jwt from "jsonwebtoken";
 
 const isAuth = async (req, res, next) => {
@@ -31,4 +30,3 @@ const isAuth = async (req, res, next) => {
 };
 
 export default isAuth;
-```
