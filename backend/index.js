@@ -27,8 +27,7 @@ const allowedOrigins = [
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
-app.options('*', cors()); // Enable pre-flight for all routes
-
+// CORS middleware handles preflight automatically
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
