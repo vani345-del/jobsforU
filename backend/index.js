@@ -7,6 +7,8 @@ import passport from "passport";
 
 import authRouter from "./routes/authRoutes.js";
 import resumeRouter from "./routes/resumeRoutes.js";
+import isAuth from "./middleware/isAuth.js";
+import { getDraft, saveDraft, getVersions } from "./controllers/resumeController.js";
 
 
 dotenv.config();
@@ -72,6 +74,11 @@ app.use(async (req, res, next) => {
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "OK", timestamp: new Date().toISOString() });
 });
+
+// Direct Routes (Temporary Debugging)
+app.get("/api/resume/draft", isAuth, getDraft);
+app.post("/api/resume/draft", isAuth, saveDraft);
+app.get("/api/resume/versions", isAuth, getVersions);
 
 // Routes
 app.use("/api/auth", authRouter);
