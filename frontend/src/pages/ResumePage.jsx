@@ -273,9 +273,15 @@ const ResumePage = () => {
     const handleDownloadPDF = async () => {
         setIsDownloading(true);
         try {
+            // Determine API URL based on environment
+            const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const apiUrl = isLocal
+                ? 'http://localhost:5000/api/resume/download-pdf'
+                : 'https://jobsfor-u.vercel.app/api/resume/download-pdf';
+
             // Call backend to generate PDF
             const response = await axios.post(
-                'https://jobsfor-u.vercel.app/api/resume/download-pdf',
+                apiUrl,
                 { resumeData: currentData },
                 {
                     responseType: 'blob', // Important for handling binary data
