@@ -14,6 +14,12 @@ connectDB()
 const app = express();
 const port = process.env.PORT || 8000;
 
+// Debug Middleware
+app.use((req, res, next) => {
+  console.log(`[Incoming Request] ${req.method} ${req.url}`);
+  next();
+});
+
 // CORS Configuration
 const allowedOrigins = [
   "http://localhost:5173",
@@ -60,6 +66,11 @@ app.use(async (req, res, next) => {
     isConnected = true;
   }
   next();
+});
+
+// Health Check
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "OK", timestamp: new Date().toISOString() });
 });
 
 // Routes
