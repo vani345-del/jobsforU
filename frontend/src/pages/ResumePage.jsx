@@ -364,22 +364,6 @@ const ResumePage = () => {
         return <div className="flex justify-center items-center h-screen bg-gray-50"><FaSpinner className="animate-spin text-4xl text-blue-600" /></div>;
     }
 
-    if (status === 'failed') {
-        return (
-            <div className="flex flex-col justify-center items-center h-screen bg-gray-50 text-center p-4">
-                <FaExclamationCircle className="text-red-500 text-5xl mb-4" />
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Something went wrong</h2>
-                <p className="text-gray-600 mb-6 max-w-md">{error?.message || "Failed to load your resume. Please try again."}</p>
-                <button
-                    onClick={() => window.location.reload()}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                    Refresh Page
-                </button>
-            </div>
-        );
-    }
-
     return (
         <div className="flex flex-col h-screen bg-gray-50 overflow-hidden font-sans text-gray-800">
             {/* Minimal Top Bar */}
