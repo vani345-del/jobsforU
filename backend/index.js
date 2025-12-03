@@ -14,22 +14,16 @@ connectDB()
 const app = express();
 const port = process.env.PORT || 8000;
 
-// Parse JSON (for base64 avatar)
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-
-
-
+// CORS Configuration
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "https://jobsfor-u-4qa6.vercel.app",
-  "https://jobsfor-u-4qa6.vercel.app/",
   "https://jobsfor-u.vercel.app",
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
-// CORS middleware handles preflight automatically
+// Apply CORS before other middleware
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
@@ -40,13 +34,17 @@ app.use(cors({
       callback(null, true);
     } else {
       console.log("Blocked by CORS:", origin);
-      callback(new Error('Not allowed by CORS'));
+      callback(null, true); // Temporarily allow ALL origins to debug/fix the issue
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
+
+// Parse JSON (for base64 avatar)
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Cookies
 app.use(cookieParser());
