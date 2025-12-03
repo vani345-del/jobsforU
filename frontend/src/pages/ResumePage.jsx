@@ -273,61 +273,37 @@ const ResumePage = () => {
     const handleDownloadPDF = async () => {
         setIsDownloading(true);
         try {
-            // Import jsPDF and html-to-image dynamically
-            const { default: jsPDF } = await import('jspdf');
-            const { toPng } = await import('html-to-image');
-
-            // Get the resume preview element
-            const resumeElement = document.querySelector('[data-resume-preview]');
-
-            if (!resumeElement) {
-                throw new Error('Resume preview not found');
-            }
-
-            // Generate PNG from the DOM element
-            // html-to-image handles modern CSS (like oklch) better than html2canvas
-            const dataUrl = await toPng(resumeElement, {
-                quality: 0.95,
-                backgroundColor: '#ffffff',
-                style: {
-                    transform: 'scale(1)', // Ensure no scaling artifacts
+            // Call backend to generate PDF
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/resume/download-pdf`,
+                { resumeData: currentData },
+                {
+                    responseType: 'blob', // Important for handling binary data
+                    withCredentials: true
                 }
-            });
+            );
 
-            // Calculate PDF dimensions (A4: 210mm x 297mm)
-            const imgWidth = 210;
-            const pageHeight = 297;
+            // Create a blob URL and trigger download
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
 
-            // Create PDF
-            const pdf = new jsPDF('p', 'mm', 'a4');
-
-            // Load image to get dimensions
-            const imgProps = pdf.getImageProperties(dataUrl);
-            const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-
-            let heightLeft = imgHeight;
-            let position = 0;
-
-            // Add first page
-            pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-
-            // Add additional pages if content is longer than one page
-            while (heightLeft > 0) {
-                position = heightLeft - imgHeight;
-                pdf.addPage();
-                pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-            }
-
-            // Download the PDF
+            // Generate filename
             const filename = `resume-${currentData.personalInfo.fullName.replace(/\s+/g, '_') || 'draft'}.pdf`;
-            pdf.save(filename);
+            link.setAttribute('download', filename);
+
+            document.body.appendChild(link);
+            link.click();
+
+            // Cleanup
+            link.parentNode.removeChild(link);
+            window.URL.revokeObjectURL(url);
 
             toast.success("PDF downloaded successfully!");
         } catch (error) {
             console.error("Download failed:", error);
-            toast.error(`Failed to download PDF: ${error.message || 'Please try again.'}`);
+            const errorMessage = error.response?.data?.message || error.message || 'Please try again.';
+            toast.error(`Failed to download PDF: ${errorMessage}`);
         } finally {
             setIsDownloading(false);
         }
