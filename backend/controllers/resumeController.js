@@ -201,10 +201,10 @@ export const downloadPDF = async (req, res) => {
                 console.log('[PDF] Executable Path:', executablePath);
 
                 browser = await puppeteerCore.default.launch({
-                    args: chromium.default.args,
+                    args: [...chromium.default.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
                     defaultViewport: chromium.default.defaultViewport,
                     executablePath: executablePath,
-                    headless: chromium.default.headless,
+                    headless: "new", // Use "new" for v21
                     ignoreHTTPSErrors: true,
                 });
 
