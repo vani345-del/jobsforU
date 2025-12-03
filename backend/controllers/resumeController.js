@@ -172,9 +172,8 @@ export const updateVersion = async (req, res) => {
     }
 };
 
-// Download PDF with chrome-aws-lambda
+// Download PDF with @sparticuz/chromium
 export const downloadPDF = async (req, res) => {
-    console.warn('⚠️⚠️⚠️ BACKEND PDF ENDPOINT CALLED - THIS SHOULD NOT HAPPEN IF FRONTEND IS UPDATED! ⚠️⚠️⚠️');
     try {
         const { resumeData } = req.body;
 
@@ -188,31 +187,32 @@ export const downloadPDF = async (req, res) => {
         try {
             console.log('[PDF] Starting PDF generation...');
 
-            // Use chrome-aws-lambda for serverless environments
             if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
-                console.log('[PDF] Running in PRODUCTION/VERCEL mode');
+                console.log('[PDF] Running in PRODUCTION/VERCEL mode with @sparticuz/chromium');
 
-                const chromium = await import('chrome-aws-lambda');
+                const chromium = await import('@sparticuz/chromium');
                 const puppeteerCore = await import('puppeteer-core');
 
-                console.log('[PDF] Launching browser with chrome-aws-lambda...');
+                // Configure sparticuz/chromium
+                // chromium.default.setHeadlessMode = true; // Optional, defaults to true
+                // chromium.default.setGraphicsMode = false; // Optional, defaults to false
 
                 browser = await puppeteerCore.default.launch({
                     args: chromium.default.args,
                     defaultViewport: chromium.default.defaultViewport,
-                    executablePath: await chromium.default.executablePath,
+                    executablePath: await chromium.default.executablePath(),
                     headless: chromium.default.headless,
                     ignoreHTTPSErrors: true,
                 });
 
-                console.log('[PDF] Browser launched with chrome-aws-lambda');
+                console.log('[PDF] Browser launched with @sparticuz/chromium');
             } else {
                 // Local development
                 console.log('[PDF] Running in LOCAL mode');
-                const puppeteerLocal = await import('puppeteer');
+                const puppeteer = await import('puppeteer');
 
-                browser = await puppeteerLocal.default.launch({
-                    headless: true,
+                browser = await puppeteer.default.launch({
+                    headless: "new",
                     args: ['--no-sandbox', '--disable-setuid-sandbox']
                 });
 

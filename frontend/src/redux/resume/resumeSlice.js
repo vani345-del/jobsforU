@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = '/api/resume';
+const API_URL = 'https://jobsfor-u.vercel.app/api/resume';
 
 // Initial State
 const initialState = {

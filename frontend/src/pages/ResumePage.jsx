@@ -275,7 +275,7 @@ const ResumePage = () => {
         try {
             // Call backend to generate PDF
             const response = await axios.post(
-                '/api/resume/download-pdf',
+                'https://jobsfor-u.vercel.app/api/resume/download-pdf',
                 { resumeData: currentData },
                 {
                     responseType: 'blob', // Important for handling binary data
