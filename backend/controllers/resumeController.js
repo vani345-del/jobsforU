@@ -193,15 +193,15 @@ export const downloadPDF = async (req, res) => {
                 const chromium = await import('@sparticuz/chromium');
                 const puppeteerCore = await import('puppeteer-core');
 
-                // Configure sparticuz/chromium
-                // chromium.default.setHeadlessMode = true; // Optional, defaults to true
-                // chromium.default.setGraphicsMode = false; // Optional, defaults to false
+                // Log the path to debug
+                const executablePath = await chromium.default.executablePath();
+                console.log('[PDF] Executable Path:', executablePath);
 
                 browser = await puppeteerCore.default.launch({
-                    args: chromium.default.args,
+                    args: [...chromium.default.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
                     defaultViewport: chromium.default.defaultViewport,
-                    executablePath: await chromium.default.executablePath(),
-                    headless: chromium.default.headless,
+                    executablePath: executablePath,
+                    headless: true, // Force headless
                     ignoreHTTPSErrors: true,
                 });
 

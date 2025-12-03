@@ -5,5 +5,11 @@
             "source": "/(.*)",
             "destination": "/index.js"
         }
-    ]
+    ],
+    "functions": {
+        "index.js": {
+            "memory": 1024,
+            "maxDuration": 60
+        }
+    }
 }
