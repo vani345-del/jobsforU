@@ -2,10 +2,10 @@ import genToken from "../config/token.js";
 import User from "../models/User.js";
 import validator from "validator";
 import bcrypt from "bcryptjs";
-import sendEmail from "../utils/sendEmail.js"; 
-import crypto from 'crypto'; 
-import passport from 'passport'; 
-import { Strategy as LinkedInStrategy } from 'passport-linkedin-oauth2'; 
+import sendEmail from "../utils/sendEmail.js";
+import crypto from 'crypto';
+import passport from 'passport';
+import { Strategy as LinkedInStrategy } from 'passport-linkedin-oauth2';
 import cloudinary from '../config/cloudinary.js';
 
 
@@ -14,7 +14,7 @@ const IS_VERCEL = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
 const IS_SECURE_CONTEXT = process.env.NODE_ENV === "production" || IS_VERCEL;
 
 // ⭐ NEW: Base domain for the cookie. This should be set as an ENV var in Vercel.
-const VERCEL_BACKEND_DOMAIN = process.env.VERCEL_BACKEND_DOMAIN; 
+const VERCEL_BACKEND_DOMAIN = process.env.VERCEL_BACKEND_DOMAIN;
 
 // ⭐ UPDATED: Use FRONTEND_URL environment variable for client redirects
 const CLIENT_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -22,135 +22,136 @@ const CLIENT_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 // Add debug log
 console.log("🔧 Environment Check:", {
-    NODE_ENV: process.env.NODE_ENV,
-    VERCEL: process.env.VERCEL,
-    VERCEL_ENV: process.env.VERCEL_ENV,
-    IS_SECURE_CONTEXT,
-    VERCEL_BACKEND_DOMAIN, // Log the domain
-    CLIENT_URL, // Log the client URL
+  NODE_ENV: process.env.NODE_ENV,
+  VERCEL: process.env.VERCEL,
+  VERCEL_ENV: process.env.VERCEL_ENV,
+  IS_SECURE_CONTEXT,
+  VERCEL_BACKEND_DOMAIN, // Log the domain
+  CLIENT_URL, // Log the client URL
 });
 
 
 // ⭐ CRITICAL FIX: Conditional Cookie Options for Vercel
+// ⭐ CRITICAL FIX: Conditional Cookie Options for Vercel
 const COOKIE_OPTIONS = {
-    httpOnly: true,
-    // Use conditional secure and sameSite based on context
-    secure: IS_SECURE_CONTEXT, 
-    sameSite: IS_SECURE_CONTEXT ? "none" : "lax", // 'none' is required for cross-site with 'secure: true'
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    path: "/",
-    
-    // ⭐ CRITICAL FIX: Conditionally set the domain for Vercel deployments
-    ...(IS_VERCEL && VERCEL_BACKEND_DOMAIN && { domain: VERCEL_BACKEND_DOMAIN }), 
+  httpOnly: true,
+  // Use conditional secure and sameSite based on context
+  secure: IS_SECURE_CONTEXT,
+  sameSite: IS_SECURE_CONTEXT ? "none" : "lax", // 'none' is required for cross-site with 'secure: true'
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  path: "/",
+
+  // ⭐ CRITICAL FIX: Only set domain in production, not preview
+  ...(IS_VERCEL && process.env.VERCEL_ENV === 'production' && VERCEL_BACKEND_DOMAIN && { domain: VERCEL_BACKEND_DOMAIN }),
 };
 
 console.log("🍪 Cookie Options:", COOKIE_OPTIONS); // Debug log
 
 
 passport.use(new LinkedInStrategy({
-// ... (LinkedInStrategy logic remains unchanged)
-    clientID: process.env.LINKEDIN_CLIENT_ID,
-    clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
-    callbackURL: process.env.LINKEDIN_CALLBACK_URL,
-    scope: ['r_liteprofile', 'r_emailaddress'], 
-    state: true, 
+  // ... (LinkedInStrategy logic remains unchanged)
+  clientID: process.env.LINKEDIN_CLIENT_ID,
+  clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
+  callbackURL: process.env.LINKEDIN_CALLBACK_URL,
+  scope: ['r_liteprofile', 'r_emailaddress'],
+  state: true,
 }, async (accessToken, refreshToken, profile, done) => {
-    try {
-        const linkedInId = profile.id;
-        const email = profile.emails[0].value;
-        const name = profile.displayName;
-        const avatar = profile.photos[0]?.value;
+  try {
+    const linkedInId = profile.id;
+    const email = profile.emails[0].value;
+    const name = profile.displayName;
+    const avatar = profile.photos[0]?.value;
 
-        
-        let user = await User.findOne({ linkedInId });
 
-        if (user) {
-           
-            return done(null, user);
-        }
+    let user = await User.findOne({ linkedInId });
 
-      
-        user = await User.findOne({ email });
+    if (user) {
 
-        if (user) {
-           
-            user.linkedInId = linkedInId;
-            user.isVerified = true; 
-            await user.save();
-            return done(null, user);
-        }
-
-       
-        const newUser = await User.create({
-            name,
-            email,
-            avatar,
-            linkedInId,
-            isVerified: true, 
-        });
-
-        return done(null, newUser);
-    } catch (error) {
-        return done(error, false);
+      return done(null, user);
     }
+
+
+    user = await User.findOne({ email });
+
+    if (user) {
+
+      user.linkedInId = linkedInId;
+      user.isVerified = true;
+      await user.save();
+      return done(null, user);
+    }
+
+
+    const newUser = await User.create({
+      name,
+      email,
+      avatar,
+      linkedInId,
+      isVerified: true,
+    });
+
+    return done(null, newUser);
+  } catch (error) {
+    return done(error, false);
+  }
 }));
 
 
 export const linkedInCallback = (req, res) => {
-  
-    if (req.user) {
-        
-        const token = genToken(req.user._id);
-        res.cookie("token", token, COOKIE_OPTIONS);
-        
-        // ⭐ UPDATED: Use CLIENT_URL (now linked to FRONTEND_URL)
-        res.redirect(`${CLIENT_URL}/profile`); 
-    } else {
-      
-        res.redirect(`${CLIENT_URL}/login?error=LinkedInAuthFailed`);
-    }
+
+  if (req.user) {
+
+    const token = genToken(req.user._id);
+    res.cookie("token", token, COOKIE_OPTIONS);
+
+    // ⭐ UPDATED: Use CLIENT_URL (now linked to FRONTEND_URL)
+    res.redirect(`${CLIENT_URL}/profile`);
+  } else {
+
+    res.redirect(`${CLIENT_URL}/login?error=LinkedInAuthFailed`);
+  }
 };
 
 
-export const signup = async(req, res) => {
-    try {
-        const {name,email,password, } = req.body;
-        let existUser=await User.findOne({email});
-        
-        if(existUser){
-            return res.status(400).json({message:"User already exist"});
-        }
-        if(!validator.isEmail(email)){
-            return res.status(400).json({message:"Enter a valid email"});
-        }
-        if(password.length<8){
-            return res.status(400).json({message:"Password must be at least 8 characters long"});
-        }
-        
-        let hashPassword=await bcrypt.hash(password,10);
-        
-       
-        const user=await User.create({
-            name,
-            email,
-            password:hashPassword,
-            isVerified: false,
-        });
+export const signup = async (req, res) => {
+  try {
+    const { name, email, password, } = req.body;
+    let existUser = await User.findOne({ email });
 
-       
-        const otp = Math.floor(100000 + Math.random() * 900000).toString(); 
-        const hashedOtp = await bcrypt.hash(otp, 10);
-        
-        user.verificationOtp = hashedOtp;
-        user.verificationOtpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
-        await user.save();
-        
-       
-       await sendEmail({
-            to: email,
-            subject: 'Account Verification Code: Your 6-Digit OTP', // Explicit subject
-            text: `Hello ${name},\n\nYour One-Time Passcode (OTP) for verification is: ${otp}. This code expires in 10 minutes. Please enter it on the verification screen.`,
-            html: `
+    if (existUser) {
+      return res.status(400).json({ message: "User already exist" });
+    }
+    if (!validator.isEmail(email)) {
+      return res.status(400).json({ message: "Enter a valid email" });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters long" });
+    }
+
+    let hashPassword = await bcrypt.hash(password, 10);
+
+
+    const user = await User.create({
+      name,
+      email,
+      password: hashPassword,
+      isVerified: false,
+    });
+
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedOtp = await bcrypt.hash(otp, 10);
+
+    user.verificationOtp = hashedOtp;
+    user.verificationOtpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+    await user.save();
+
+
+    await sendEmail({
+      to: email,
+      subject: 'Account Verification Code: Your 6-Digit OTP', // Explicit subject
+      text: `Hello ${name},\n\nYour One-Time Passcode (OTP) for verification is: ${otp}. This code expires in 10 minutes. Please enter it on the verification screen.`,
+      html: `
                 <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ccc; border-radius: 8px;">
                     <h2>Email Verification Required</h2>
                     <p>Hello ${name}, thank you for signing up!</p>
@@ -169,96 +170,96 @@ export const signup = async(req, res) => {
                     <p style="font-size: 12px; color: #777;">This code is valid for 10 minutes.</p>
                 </div>
             `,
-        });
+    });
 
-        
-        return res.status(202).json({
-            user,
-            message: "User created. OTP sent for verification."
-        });
-    }
-    catch (error) {
-        console.error("Signup failed:", error); 
-        return res.status(500).json({message:`Sign up error: User created, but failed to send verification email.`});
-    }
+
+    return res.status(202).json({
+      user,
+      message: "User created. OTP sent for verification."
+    });
+  }
+  catch (error) {
+    console.error("Signup failed:", error);
+    return res.status(500).json({ message: `Sign up error: User created, but failed to send verification email.` });
+  }
 };
 
 export const verifyOtp = async (req, res) => {
-    try {
-        const { email, otp } = req.body;
+  try {
+    const { email, otp } = req.body;
 
-        const user = await User.findOne({ email });
-        
-        if (!user) {
-            return res.status(404).json({ message: 'User not found.' });
-        }
+    const user = await User.findOne({ email });
 
-      
-        if (user.verificationOtpExpires < Date.now()) {
-            return res.status(400).json({ message: 'Verification code has expired. Please sign up again.' });
-        }
-
-       
-        const isOtpValid = await bcrypt.compare(otp.toString(), user.verificationOtp);
-        
-        if (!isOtpValid) {
-            return res.status(400).json({ message: 'Invalid verification code.' });
-        }
-
-        user.isVerified = true;
-        user.verificationOtp = undefined;
-        user.verificationOtpExpires = undefined;
-        await user.save();
-
-      
-        let token = await genToken(user._id);
-        res.cookie("token", token, COOKIE_OPTIONS);
-        return res.status(200).json(user);
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: `OTP Verification Error: ${error.message}` });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
     }
+
+
+    if (user.verificationOtpExpires < Date.now()) {
+      return res.status(400).json({ message: 'Verification code has expired. Please sign up again.' });
+    }
+
+
+    const isOtpValid = await bcrypt.compare(otp.toString(), user.verificationOtp);
+
+    if (!isOtpValid) {
+      return res.status(400).json({ message: 'Invalid verification code.' });
+    }
+
+    user.isVerified = true;
+    user.verificationOtp = undefined;
+    user.verificationOtpExpires = undefined;
+    await user.save();
+
+
+    let token = await genToken(user._id);
+    res.cookie("token", token, COOKIE_OPTIONS);
+    return res.status(200).json(user);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: `OTP Verification Error: ${error.message}` });
+  }
 };
 
 export const login = async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        if (!email || !password) {
-            return res.status(400).json({ message: 'Email and password are required.' });
-        }
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required.' });
+    }
 
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found.' });
-        }
-
-
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        
-        if (!isPasswordValid) {
-            return res.status(401).json({ message: 'Invalid credentials.' });
-        }
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
 
 
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid credentials.' });
+    }
 
 
-        if (!user.isVerified) {
-         
-             
-           
-             const otp = Math.floor(100000 + Math.random() * 900000).toString(); 
-             const hashedOtp = await bcrypt.hash(otp, 10);
-             
-             user.verificationOtp = hashedOtp;
-             user.verificationOtpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
-             await user.save();
 
-            await sendEmail({
-                to: email,
-                subject: 'Account Verification Code: Your New 6-Digit OTP',
-                text: `Hello ${user.name},\n\nYour new One-Time Passcode (OTP) for verification is: ${otp}. This code expires in 10 minutes. Please enter it on the verification screen.`,
-                html: `
+
+    if (!user.isVerified) {
+
+
+
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const hashedOtp = await bcrypt.hash(otp, 10);
+
+      user.verificationOtp = hashedOtp;
+      user.verificationOtpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+      await user.save();
+
+      await sendEmail({
+        to: email,
+        subject: 'Account Verification Code: Your New 6-Digit OTP',
+        text: `Hello ${user.name},\n\nYour new One-Time Passcode (OTP) for verification is: ${otp}. This code expires in 10 minutes. Please enter it on the verification screen.`,
+        html: `
                     <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ccc; border-radius: 8px;">
                         <h2>Account Verification Required</h2>
                         <p>Hello ${user.name}, you are trying to log in but your account is not yet verified. A new code has been generated.</p>
@@ -276,21 +277,21 @@ export const login = async (req, res) => {
                         <p style="font-size: 12px; color: #777;">This code is valid for 10 minutes.</p>
                     </div>
                 `,
-             });
-             // 3. Return 202 status to tell the frontend to redirect
-             return res.status(202).json({ 
-                message: 'Account not verified. A new verification code has been sent to your email.', 
-                email: user.email // Send email back for frontend redirect
-             });
-        }
-        
-        let token=await genToken(user._id);
-        res.cookie("token", token, COOKIE_OPTIONS);
-        return res.status(201).json(user);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: `Login Error ${error}` });
+      });
+      // 3. Return 202 status to tell the frontend to redirect
+      return res.status(202).json({
+        message: 'Account not verified. A new verification code has been sent to your email.',
+        email: user.email // Send email back for frontend redirect
+      });
     }
+
+    let token = await genToken(user._id);
+    res.cookie("token", token, COOKIE_OPTIONS);
+    return res.status(201).json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: `Login Error ${error}` });
+  }
 }
 
 export const logout = async (req, res) => {
@@ -336,7 +337,7 @@ export const googleAuth = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      isVerified: true, 
+      isVerified: true,
     });
 
     const token = await genToken(newUser._id);
@@ -357,22 +358,22 @@ export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
-    
+
 
     if (!user) {
       return res.status(200).json({ message: 'If a matching account was found, a reset email has been sent.' });
     }
-    
- 
+
+
     if (!user.isVerified) {
-        return res.status(400).json({ message: 'Account must be verified to reset password.' });
+      return res.status(400).json({ message: 'Account must be verified to reset password.' });
     }
 
     const resetToken = crypto.randomBytes(20).toString('hex');
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
-    
+
     // ⭐ UPDATED: Use CLIENT_URL (now linked to FRONTEND_URL)
     const resetUrl = `${CLIENT_URL}/reset-password/${resetToken}`;
 
@@ -429,11 +430,11 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-   
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password.trim(), salt);
 
-  
+
     await User.updateOne(
       { _id: user._id },
       {
@@ -461,40 +462,40 @@ export const resetPassword = async (req, res) => {
 };
 
 export const updateProfile = async (req, res) => {
-    try {
-        const userId = req.userId; 
-        const { name, avatar } = req.body; // avatar will be a base64 string
+  try {
+    const userId = req.userId;
+    const { name, avatar } = req.body; // avatar will be a base64 string
 
-        const user = await User.findById(userId);
+    const user = await User.findById(userId);
 
-        if (!user) {
-            // This is unlikely if isAuth passed, but good safeguard
-            return res.status(404).json({ message: "User not found." });
-        }
-
-        // If avatar base64 string exists, upload to Cloudinary
-        if (avatar) {
-            const result = await cloudinary.uploader.upload(avatar, {
-                folder: "mern-auth-avatars",
-                transformation: [{ width: 150, height: 150, crop: "fill" }]
-            });
-            user.avatar = result.secure_url;
-        }
-
-        // Update name if provided
-        if (name) {
-            user.name = name;
-        }
-
-        await user.save();
-
-        const { password: _, ...userData } = user.toObject();
-        res.status(200).json(userData);
-
-    } catch (error) {
-        console.error("Update Profile Error:", error);
-        res.status(500).json({ message: `Profile update failed: ${error.message}` });
+    if (!user) {
+      // This is unlikely if isAuth passed, but good safeguard
+      return res.status(404).json({ message: "User not found." });
     }
+
+    // If avatar base64 string exists, upload to Cloudinary
+    if (avatar) {
+      const result = await cloudinary.uploader.upload(avatar, {
+        folder: "mern-auth-avatars",
+        transformation: [{ width: 150, height: 150, crop: "fill" }]
+      });
+      user.avatar = result.secure_url;
+    }
+
+    // Update name if provided
+    if (name) {
+      user.name = name;
+    }
+
+    await user.save();
+
+    const { password: _, ...userData } = user.toObject();
+    res.status(200).json(userData);
+
+  } catch (error) {
+    console.error("Update Profile Error:", error);
+    res.status(500).json({ message: `Profile update failed: ${error.message}` });
+  }
 };
 
 
