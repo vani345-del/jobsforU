@@ -273,9 +273,9 @@ const ResumePage = () => {
     const handleDownloadPDF = async () => {
         setIsDownloading(true);
         try {
-            // Import jsPDF and html2canvas dynamically
+            // Import jsPDF and html-to-image dynamically
             const { default: jsPDF } = await import('jspdf');
-            const { default: html2canvas } = await import('html2canvas');
+            const { toPng } = await import('html-to-image');
 
             // Get the resume preview element
             const resumeElement = document.querySelector('[data-resume-preview]');
@@ -284,72 +284,39 @@ const ResumePage = () => {
                 throw new Error('Resume preview not found');
             }
 
-            // Clone the element to avoid modifying the actual DOM
-            const clone = resumeElement.cloneNode(true);
-            clone.style.position = 'absolute';
-            clone.style.left = '-9999px';
-            document.body.appendChild(clone);
-
-            // Function to convert oklch to rgb
-            const convertOklchToRgb = (element) => {
-                const computedStyle = window.getComputedStyle(element);
-
-                // Convert all color properties
-                ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'].forEach(prop => {
-                    const value = computedStyle[prop];
-                    if (value && value.includes('oklch')) {
-                        // For now, replace with computed RGB value
-                        element.style[prop] = value;
-                    }
-                });
-
-                // Process children
-                Array.from(element.children).forEach(child => {
-                    convertOklchToRgb(child);
-                });
-            };
-
-            // Convert all oklch colors to rgb
-            convertOklchToRgb(clone);
-
-            // Convert HTML to canvas
-            const canvas = await html2canvas(clone, {
-                scale: 2, // Higher quality
-                useCORS: true,
-                logging: false,
+            // Generate PNG from the DOM element
+            // html-to-image handles modern CSS (like oklch) better than html2canvas
+            const dataUrl = await toPng(resumeElement, {
+                quality: 0.95,
                 backgroundColor: '#ffffff',
-                onclone: (clonedDoc) => {
-                    // Additional processing on the cloned document if needed
-                    const clonedElement = clonedDoc.querySelector('[data-resume-preview]');
-                    if (clonedElement) {
-                        clonedElement.style.transform = 'none';
-                    }
+                style: {
+                    transform: 'scale(1)', // Ensure no scaling artifacts
                 }
             });
-
-            // Remove the clone
-            document.body.removeChild(clone);
 
             // Calculate PDF dimensions (A4: 210mm x 297mm)
             const imgWidth = 210;
             const pageHeight = 297;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
+            // Create PDF
             const pdf = new jsPDF('p', 'mm', 'a4');
-            const imgData = canvas.toDataURL('image/png');
+
+            // Load image to get dimensions
+            const imgProps = pdf.getImageProperties(dataUrl);
+            const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
 
             let heightLeft = imgHeight;
             let position = 0;
 
             // Add first page
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight);
             heightLeft -= pageHeight;
 
             // Add additional pages if content is longer than one page
             while (heightLeft > 0) {
                 position = heightLeft - imgHeight;
                 pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight);
                 heightLeft -= pageHeight;
             }
 

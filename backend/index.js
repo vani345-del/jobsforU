@@ -24,6 +24,8 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "https://jobsfor-u-4qa6.vercel.app",
+  "https://jobsfor-u-4qa6.vercel.app/",
+  "https://jobsfor-u.vercel.app",
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
