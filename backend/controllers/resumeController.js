@@ -185,7 +185,7 @@ export const downloadPDF = async (req, res) => {
         let browser = null;
 
         try {
-            console.log('[PDF] Starting PDF generation...');
+            console.log('[PDF] Starting PDF generation... (Puppeteer check passed)');
 
             if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
                 console.log('[PDF] Running in PRODUCTION/VERCEL mode with @sparticuz/chromium');
@@ -204,7 +204,7 @@ export const downloadPDF = async (req, res) => {
                     args: [...chromium.default.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
                     defaultViewport: chromium.default.defaultViewport,
                     executablePath: executablePath,
-                    headless: "new", // Use "new" for v21
+                    headless: "new",
                     ignoreHTTPSErrors: true,
                 });
 
@@ -212,18 +212,22 @@ export const downloadPDF = async (req, res) => {
             } else {
                 // Local development
                 console.log('[PDF] Running in LOCAL mode');
-                const puppeteer = await import('puppeteer');
-
-                browser = await puppeteer.default.launch({
-                    headless: "new",
-                    args: ['--no-sandbox', '--disable-setuid-sandbox']
-                });
-
-                console.log('[PDF] Browser launched with local puppeteer');
+                try {
+                    const puppeteer = await import('puppeteer');
+                    browser = await puppeteer.default.launch({
+                        headless: "new",
+                        args: ['--no-sandbox', '--disable-setuid-sandbox']
+                    });
+                    console.log('[PDF] Browser launched with local puppeteer');
+                } catch (importError) {
+                    console.error('[PDF] Failed to import puppeteer:', importError);
+                    throw new Error("Puppeteer not found. Please run 'npm install puppeteer' in backend.");
+                }
             }
 
             const page = await browser.newPage();
-            await page.setContent(html, { waitUntil: 'networkidle0' });
+            // Optimize wait condition: 'domcontentloaded' is faster than 'networkidle0'
+            await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
             console.log('[PDF] HTML content loaded');
 
@@ -247,7 +251,8 @@ export const downloadPDF = async (req, res) => {
             if (browser) await browser.close();
             return res.status(500).json({
                 message: 'Failed to generate PDF',
-                error: error.message
+                error: error.message,
+                stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
             });
         }
     } catch (error) {

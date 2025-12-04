@@ -14,12 +14,9 @@ const router = express.Router();
 
 // Middleware to ensure user is authenticated
 const requireAuth = (req, res, next) => {
-    console.log(`[requireAuth] ${req.method} ${req.path} - userId: ${req.userId || 'null'}`);
     if (!req.userId) {
-        console.log(`[requireAuth] ❌ Access denied - No userId`);
         return res.status(401).json({ message: 'Not authorized' });
     }
-    console.log(`[requireAuth] ✅ Access granted for user: ${req.userId}`);
     next();
 };
 
