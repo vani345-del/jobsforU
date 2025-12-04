@@ -194,17 +194,22 @@ export const downloadPDF = async (req, res) => {
                 const puppeteerCore = await import('puppeteer-core');
 
                 // Configure sparticuz/chromium
+                // Note: On Vercel, we need to point to the correct binary location if needed, 
+                // but usually the default executablePath() works if the package is installed correctly.
+
+                // Important: @sparticuz/chromium v119+ might need a specific setup or just default import
+                // We will try the standard recommended way for Vercel functions.
+
                 chromium.default.setGraphicsMode = false;
 
-                // Log the path to debug
                 const executablePath = await chromium.default.executablePath();
                 console.log('[PDF] Executable Path:', executablePath);
 
                 browser = await puppeteerCore.default.launch({
-                    args: [...chromium.default.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+                    args: chromium.default.args,
                     defaultViewport: chromium.default.defaultViewport,
                     executablePath: executablePath,
-                    headless: "new",
+                    headless: chromium.default.headless,
                     ignoreHTTPSErrors: true,
                 });
 
