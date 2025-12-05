@@ -213,6 +213,7 @@ export const downloadPDF = async (req, res) => {
                 console.log('[PDF] Running in LOCAL mode');
                 try {
                     const puppeteer = await import('puppeteer');
+                    console.log('[PDF] Puppeteer imported successfully');
                     browser = await puppeteer.default.launch({
                         headless: "new",
                         args: ['--no-sandbox', '--disable-setuid-sandbox']
