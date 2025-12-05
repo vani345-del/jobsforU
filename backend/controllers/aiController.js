@@ -16,7 +16,7 @@ export const enhancedSummary = async (req, res) => {
             messages: [
                 {
                     role: "system",
-                    content: "You are an expert resume writer. Create a professional 1-2 sentence summary highlighting the candidate's experience, skills, achievements, and career goals. Be concise and ATS-friendly."
+                    content: "You are an expert resume writer. Generate ONLY a professional 1-2 sentence summary highlighting the candidate's experience, skills, achievements, and career goals. Do not include any preamble, introduction, or phrases like 'Here is' or 'The summary is'. Return ONLY the summary text itself. Be concise and ATS-friendly."
                 },
                 {
                     role: "user",
