@@ -178,85 +178,85 @@ export const downloadPDF = async (req, res) => {
         const { resumeData } = req.body;
 
         if (!resumeData) {
-            return res.status(400).json({ message: 'Resume data is required' });
+            return res.status(400).json({ message: "Resume data is required" });
         }
 
         const html = generateResumeHTML(resumeData);
         let browser = null;
 
         try {
-            console.log('[PDF] Starting PDF generation... (Puppeteer check passed)');
+            console.log("[PDF] Starting PDF generation...");
 
-            if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
-                console.log('[PDF] Running in PRODUCTION/VERCEL mode with @sparticuz/chromium');
+            // --- PRODUCTION (Vercel) ---
+            if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+                console.log("[PDF] Running in VERCEL / PRODUCTION mode");
 
-                const chromium = await import('@sparticuz/chromium');
-                const puppeteerCore = await import('puppeteer-core');
-
-                // Configure sparticuz/chromium
-                chromium.default.setGraphicsMode = false;
+                const chromium = await import("@sparticuz/chromium");
+                const puppeteerCore = await import("puppeteer-core");
 
                 const executablePath = await chromium.default.executablePath();
-                console.log('[PDF] Executable Path:', executablePath);
+                console.log("[PDF] Chromium Path:", executablePath);
 
                 browser = await puppeteerCore.default.launch({
-                    args: [...chromium.default.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
-                    defaultViewport: chromium.default.defaultViewport,
-                    executablePath: executablePath,
+                    args: chromium.default.args,
+                    executablePath,
                     headless: chromium.default.headless,
-                    ignoreHTTPSErrors: true,
+                    defaultViewport: chromium.default.defaultViewport
                 });
 
-                console.log('[PDF] Browser launched with @sparticuz/chromium');
-            } else {
-                // Local development
-                console.log('[PDF] Running in LOCAL mode');
-                try {
-                    const puppeteer = await import('puppeteer');
-                    console.log('[PDF] Puppeteer imported successfully');
-                    browser = await puppeteer.default.launch({
-                        headless: "new",
-                        args: ['--no-sandbox', '--disable-setuid-sandbox']
-                    });
-                    console.log('[PDF] Browser launched with local puppeteer');
-                } catch (importError) {
-                    console.error('[PDF] Failed to import puppeteer:', importError);
-                    throw new Error("Puppeteer not found. Please run 'npm install puppeteer' in backend.");
-                }
+                console.log("[PDF] Chromium launched successfully");
             }
 
-            const page = await browser.newPage();
-            // Optimize wait condition: 'domcontentloaded' is faster than 'networkidle0'
-            await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 60000 });
+            // --- LOCAL DEVELOPMENT ---
+            else {
+                console.log("[PDF] Running in LOCAL mode");
 
-            console.log('[PDF] HTML content loaded');
+                const puppeteer = await import("puppeteer");
+
+                browser = await puppeteer.default.launch({
+                    headless: "new",
+                    args: ["--no-sandbox", "--disable-setuid-sandbox"]
+                });
+
+                console.log("[PDF] Local Puppeteer launched");
+            }
+
+            // --- Create PDF Page ---
+            const page = await browser.newPage();
+            await page.setContent(html, {
+                waitUntil: "domcontentloaded",
+                timeout: 60000
+            });
+
+            console.log("[PDF] HTML Loaded into Puppeteer");
 
             const pdfBuffer = await page.pdf({
-                format: 'A4',
-                printBackground: true,
+                format: "A4",
+                printBackground: true
             });
 
             await browser.close();
-            console.log('[PDF] PDF generated successfully');
+            console.log("[PDF] PDF created successfully");
 
+            // --- Send File to Client ---
             res.set({
-                'Content-Type': 'application/pdf',
-                'Content-Length': pdfBuffer.length,
-                'Content-Disposition': `attachment; filename="resume-${resumeData.personalInfo.fullName.replace(/\s+/g, '_')}.pdf"`
+                "Content-Type": "application/pdf",
+                "Content-Disposition": `attachment; filename="resume-${resumeData.personalInfo.fullName?.replace(/\s+/g, "_") || "download"}.pdf"`,
+                "Content-Length": pdfBuffer.length
             });
 
             return res.send(pdfBuffer);
         } catch (error) {
-            console.error('[PDF] Generation Error:', error);
+            console.error("[PDF] Generation Error:", error);
             if (browser) await browser.close();
             return res.status(500).json({
-                message: 'Failed to generate PDF',
-                error: error.message,
-                stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+                message: "Failed to generate PDF",
+                error: error.message
             });
         }
     } catch (error) {
-        console.error('[PDF] Controller Error:', error);
-        return res.status(500).json({ message: 'Server Error' });
+        console.error("[PDF] Controller Error:", error);
+        return res.status(500).json({ message: "Server Error" });
     }
 };
+

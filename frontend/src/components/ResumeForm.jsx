@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateResumeData, updateSectionData } from '../redux/resume/resumeSlice';
-import { FaPlus, FaTrash } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaMagic } from 'react-icons/fa';
+import axios from 'axios';
 
 const InputGroup = ({ label, type = "text", value, onChange, placeholder, className = "" }) => (
     <div className={`flex flex-col gap-1 ${className}`}>
@@ -50,6 +51,9 @@ const ResumeForm = ({ data }) => {
     const currentData = data || reduxData;
     const { personalInfo, experience, education, skills, projects, certifications } = currentData;
 
+    const [isEnhancing, setIsEnhancing] = useState(false);
+    const [enhanceError, setEnhanceError] = useState('');
+
     const handleChange = (e, section, field) => {
         dispatch(updateResumeData({
             [section]: {
@@ -57,6 +61,38 @@ const ResumeForm = ({ data }) => {
                 [field]: e.target.value
             }
         }));
+    };
+
+    const handleAiEnhance = async () => {
+        if (!personalInfo.summary || personalInfo.summary.trim() === '') {
+            setEnhanceError('Please enter a summary first before enhancing it.');
+            setTimeout(() => setEnhanceError(''), 3000);
+            return;
+        }
+
+        setIsEnhancing(true);
+        setEnhanceError('');
+
+        try {
+            const response = await axios.post('/api/ai/enhanced-summary', {
+                userContent: personalInfo.summary
+            });
+
+            if (response.data && response.data.message) {
+                dispatch(updateResumeData({
+                    personalInfo: {
+                        ...personalInfo,
+                        summary: response.data.message
+                    }
+                }));
+            }
+        } catch (error) {
+            console.error('Error enhancing summary:', error);
+            setEnhanceError(error.response?.data?.message || 'Failed to enhance summary. Please try again.');
+            setTimeout(() => setEnhanceError(''), 5000);
+        } finally {
+            setIsEnhancing(false);
+        }
     };
 
     const handleArrayChange = (e, section, index, field) => {
@@ -101,7 +137,39 @@ const ResumeForm = ({ data }) => {
                         <InputGroup label="LinkedIn URL" value={personalInfo.linkedin || ''} onChange={(e) => handleChange(e, 'personalInfo', 'linkedin')} placeholder="linkedin.com/in/..." />
                         <InputGroup label="Portfolio URL" value={personalInfo.portfolio || ''} onChange={(e) => handleChange(e, 'personalInfo', 'portfolio')} placeholder="yourwebsite.com" />
                         <InputGroup label="Location" value={personalInfo.address || ''} onChange={(e) => handleChange(e, 'personalInfo', 'address')} placeholder="City, Country" />
-                        <TextAreaGroup label="Professional Summary" value={personalInfo.summary || ''} onChange={(e) => handleChange(e, 'personalInfo', 'summary')} placeholder="Briefly describe your professional background..." className="md:col-span-2" />
+
+                        {/* AI Enhance Button and Professional Summary */}
+                        <div className="md:col-span-2 flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">
+                                    Professional Summary
+                                </label>
+                                <button
+                                    onClick={handleAiEnhance}
+                                    disabled={isEnhancing || !personalInfo.summary}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${isEnhancing || !personalInfo.summary
+                                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                        : 'bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600 hover:shadow-lg transform hover:scale-105'
+                                        }`}
+                                >
+                                    <FaMagic className={isEnhancing ? 'animate-spin' : ''} />
+                                    {isEnhancing ? 'Enhancing...' : 'AI Enhance'}
+                                </button>
+                            </div>
+
+                            {enhanceError && (
+                                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm">
+                                    {enhanceError}
+                                </div>
+                            )}
+
+                            <textarea
+                                value={personalInfo.summary || ''}
+                                onChange={(e) => handleChange(e, 'personalInfo', 'summary')}
+                                placeholder="Briefly describe your professional background..."
+                                className="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition-all duration-200 hover:bg-white hover:shadow-sm min-h-[100px]"
+                            />
+                        </div>
                     </div>
                 </section>
 
