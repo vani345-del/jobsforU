@@ -74,17 +74,25 @@ const ResumeForm = ({ data }) => {
         setEnhanceError('');
 
         try {
+            console.log("Sending request to enhance summary...");
             const response = await axios.post('/api/ai/enhanced-summary', {
                 userContent: personalInfo.summary
             });
 
-            if (response.data && response.data.message) {
+            console.log("AI Response:", response.data);
+
+            if (response.data && typeof response.data.message === 'string') {
+                const newSummary = response.data.message;
+                console.log("Dispatching update with new summary:", newSummary);
+
                 dispatch(updateResumeData({
                     personalInfo: {
                         ...personalInfo,
-                        summary: response.data.message
+                        summary: newSummary
                     }
                 }));
+            } else {
+                console.warn("AI response missing 'message' field or it is not a string", response.data);
             }
         } catch (error) {
             console.error('Error enhancing summary:', error);

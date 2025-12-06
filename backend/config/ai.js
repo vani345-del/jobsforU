@@ -1,7 +1,15 @@
-import Groq from "groq-sdk";
+// config/ai.js
+// config/ai.js
+import OpenAI from "openai";
+import dotenv from "dotenv";
 
-const groq = new Groq({
-    apiKey: process.env.GROQ_API_KEY
+dotenv.config();
+
+const openai = new OpenAI({
+    
+  apiKey: process.env.OPENAI_API_KEY,
+  // Force the real OpenAI endpoint (ignores any wrong OPENAI_BASE_URL)
+   baseURL: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",
 });
 
-export default groq;
+export default openai;

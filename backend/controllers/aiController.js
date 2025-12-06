@@ -1,42 +1,38 @@
-import groq from '../config/ai.js';
+// controllers/aiController.js
+import dotenv from "dotenv";
+import openai from "../config/ai.js";
+
+dotenv.config();
 
 export const enhancedSummary = async (req, res) => {
-    try {
-        const { userContent } = req.body;
+  try {
+    const { userContent } = req.body;
 
-        if (!userContent) {
-            return res.status(400).json({ message: "User content is required" });
-        }
-
-        console.log("Calling Groq AI (Llama 3.3)");
-        console.log("User content:", userContent);
-
-        // Call Groq API with Llama 3.3 model (latest supported model)
-        const chatCompletion = await groq.chat.completions.create({
-            messages: [
-                {
-                    role: "system",
-                    content: "You are an expert resume writer. Generate ONLY a professional 1-2 sentence summary highlighting the candidate's experience, skills, achievements, and career goals. Do not include any preamble, introduction, or phrases like 'Here is' or 'The summary is'. Return ONLY the summary text itself. Be concise and ATS-friendly."
-                },
-                {
-                    role: "user",
-                    content: userContent
-                }
-            ],
-            model: "llama-3.3-70b-versatile", // Latest fast and high-quality model
-            temperature: 0.7,
-            max_tokens: 150
-        });
-
-        const enhancedSummary = chatCompletion.choices[0]?.message?.content || "";
-
-        console.log("Enhanced summary generated successfully via Groq");
-
-        return res.status(200).json({ message: enhancedSummary });
-
-    } catch (error) {
-        console.error("Groq AI Error:", error);
-        console.error("Error details:", error.message);
-        return res.status(500).json({ message: error.message || "Failed to enhance summary" });
+    if (!userContent) {
+      return res.status(400).json({ message: "User content is required" });
     }
+
+    const prompt = `
+You are an expert resume writer. Generate ONLY a professional 1–2 sentence resume summary.
+No introductions. No notes. Only the summary.
+
+User summary:
+${userContent}
+`;
+
+    console.log("Calling OpenAI with model:", process.env.OPENAI_MODEL);
+
+    const response = await openai.responses.create({
+      model: process.env.OPENAI_MODEL || "gpt-5-nano",
+      input: prompt,
+      store: false,
+    });
+
+    const enhancedText = response.output_text;
+
+    return res.status(200).json({ message: enhancedText });
+  } catch (error) {
+    console.error("OPENAI ERROR:", error);
+    return res.status(500).json({ message: "Failed to enhance summary" });
+  }
 };
